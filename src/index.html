@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Game</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/multi-swap.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1 id="title" style="text-align: center;">Password Game</h2>
+
+    <div style="position: absolute; width: 100%;">
+    <!-- Start Form Input -->
+    <div class="container">
+        <div class="row justify-content-center g-3">
+            <form class="col-md-8">
+                <div class="row">
+
+                    <!-- <div class="col-12 mt-3">
+                        <label for="Algorithm" class="form-label">String Matching Algorithm</label>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="inputAlgorithm" id="inlineRadio1" value="KMP" checked>
+                            <label class="form-check-label" for="inlineRadio1">Knuth-Morris-Pratt (KMP)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="inputAlgorithm" id="inlineRadio2" value="BM">
+                            <label class="form-check-label" for="inlineRadio2">Boyer-Moore (BM)</label>
+                        </div>
+                    </div> -->
+
+
+                    <div class="col-12 mt-3">
+                        <label for="Prompt" class="form-label">Enter a password</label>
+                    </div>
+                    <div class="col"
+                    >               
+                        <div class="form-control" style="position: absolute; border: none; width: 700px; word-wrap: break-word; display: inline-block;">
+                            <div id="inputBackground"></div>
+                        </div>
+
+                        <div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
+                        ></div>
+
+                        <input type="hidden" name="inputControl" 
+                        hx-post="/check/" 
+                        hx-trigger="input from:#inputEntry, changed from:#inputEntry" 
+                        hx-swap="multi:#rule-list:innerHTML,#inputBackground:innerHTML,#inputEntry:innerHTML,#Length:innerHTML,#timer-fire:outerHTML,#timer-paul:outerHTML,#game-over:outerHTML" 
+                        required="required"
+                        hx-vals='js:{password: getPassword(), time: getTime(), timeInt: getTimeInt()}'
+                        hx-ext="multi-swap"
+                        hx-on::before-request="cleanEntry()"
+                        >
+                    </div>
+
+                    <div class="col-auto">
+                        <label id="Length" for="Length" class="form-label">0</label>
+                    </div>
+
+                    <div class="container my-3"> 
+                        <h4>Timer: </h4> 
+                        <div> 
+                            <span id="hr">00</span> 
+                            <span>:</span> 
+                            <span id="min">00</span> 
+                            <span>:</span> 
+                            <span id="sec">00</span> 
+                        </div> 
+                    </div> 
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- End Form Input -->
+
+    <!-- Start Rules Display -->
+    <div class="container mt-5">
+        <div class="row justify-content-center g-3">
+            <div class="col-md-8">
+                <h3 class="mb-4">Rules</h3>
+                {{ block "rule-list-element" . }}
+                <ol class="list-group fs-5" id="rule-list"> 
+                    {{ range .Rules}}
+                        <li class="list-group-item bg-primary text-white">
+                            <div class="row justify-content-start m-1">
+                                {{ .Emoji }} {{ .Text }} 
+                            </div>
+                            
+                            {{ .Extra }}
+
+                            <!-- <div class="row justify-content-center m-1" id="keyboard">
+                                <div class="row justify-content-center m-1">
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">A</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">B</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">C</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">D</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">E</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">F</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">G</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">H</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">I</button>
+                                </div>
+                                <div class="row justify-content-center m-1">
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()" autocomplete="off">J</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">K</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">L</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">M</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">N</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">O</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">P</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">Q</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">R</button>
+                                </div>
+                                <div class="row justify-content-center m-1 w-75">
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">S</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">T</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">U</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">V</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">W</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">X</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">Y</button>
+                                    <button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">Z</button>
+                                </div>
+                                <div class="row justify-content-center m-1 w-25">
+                                    <button class="col btn btn-sary" type="submit" 
+                                    hx-post="/sacrifice/" 
+                                    hx-vals='js:{sacrifice: sacrifice()}'
+                                    style="border-color:black; min-height: 25px;"
+                                    >🔥 Sacrifice</button>
+                                </div>
+							</div> -->
+                        </li>
+                        
+                        </li>
+                    {{ end }}
+                </ol>
+                {{ end }}
+            </div>
+        </div>
+    </div>
+    <!-- End Rules Display -->
+
+    <!-- Start How To Use -->
+    <div class="container mt-5">
+        <div class="row justify-content-center g-3">
+            <div class="col-md-8">
+                <h3>How To Use</h3>
+                <ol style="display: inline-block; text-align: left;">
+                    <li>Select the string matching algorithm</li>
+                    <li>Enter a password</li>
+                    <li>Additional rules will appear as you enter correct passwords</li>
+                    <li>Reach the last rule to win</li>
+                    <li>Enter "cheat" to see potential answer</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    <!-- End How To Use -->
+    </div>
+
+    <div id="timer-fire">
+    </div>
+
+    <div id="timer-paul">
+    </div>
+    
+    <div id="game-over"></div>
+    <!-- <div id="game-over" class="flex-column" style="position: absolute; width: 100%; height: 100%; display: flex;">
+        <div class="row flex-grow-1 align-items-center justify-content-center" style="display: flex;font-size: 48;">
+            <div style="position: absolute; width: 100%; height: 100%; background-color: grey; opacity: 0.5;"></div>
+            <div class="align-self-center align-items-center justify-content-center" style="display: flex; height: 200px; background-color: black; color: gold; position: absolute; width: 100%;">
+                <div class="col align-self-center align-items-center justify-content-center">
+                    <div class="row row position align-self-center align-items-center justify-content-center"
+                    style="text-align: center; font-size: 320%;">
+                        GREAT TRIAL CONQUERED
+                    </div>
+                    <div class="row position align-self-center align-items-center justify-content-center"
+                    style="font-size: 120%;">
+                        your time: ` + timeStr + `
+                    </div>
+                    <div class="row position align-self-center align-items-center justify-content-center"
+                    style="font-size: 120%;">
+                        your time: ` + timeStr + `
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <script> 
+        var checked = 0;
+        const buttonsChecked = [];
+        var letters = "";
+
+        var h = 0; 
+        var m = 0; 
+        var s = 0; 
+        timer = true; 
+        setTimeout(stopWatch, 1000); 
+
+        function cleanEntry() {
+            console.log("Called", letters)
+
+            var entry = document.getElementById('inputEntry');
+            var password = entry.innerHTML;
+            const reg = new RegExp("<span(.*?)span>", "gms");
+            if(reg.test(password)) {
+                var r1 = new RegExp(`<span(.*?)>`)
+                var r2 = new RegExp(`</span>`)
+                password = password.replace(r1,"");
+                password = password.replace(r2,"");
+
+                entry.innerHTML = password;
+            }
+
+            if(letters != "") {
+                // console.log("HEY")
+                var r3 = new RegExp("["+letters+"]", "i");
+                if(r3.test(password)) {
+                    password = password.replace(r3,"")
+
+                    entry.innerHTML = password;
+                }
+            }
+        }
+
+        function getPassword() {
+            var password = document.getElementById('inputEntry');
+            console.log(password.textContent)
+
+            var clean = password.textContent
+            if(letters != "") {
+                console.log("HEY")
+                var r = new RegExp("["+letters+"]", "i");
+                if(r.test(clean)) {
+                    clean = clean.replace(r,"")
+                }
+            }
+
+            return clean;
+        }
+
+        function gameOver() {
+            var inputEntry = document.getElementById("inputEntry");
+            inputEntry.contentEditable = "false";
+            timer = false;
+        }
+
+        function buttonPress() {
+            var clicked = event.target;
+            if (clicked.ariaPressed == "false") {
+                // console.log("uncheck")
+                for(var i = 0; i < buttonsChecked.length; i++) {
+                    var button = buttonsChecked[i];
+
+                    if (clicked.isEqualNode(button)) {
+                        buttonsChecked.splice(i,1);
+                        break;
+                    }
+                }
+
+                console.log(buttonsChecked)
+
+                return;
+            }
+
+            // console.log("check")
+            if (buttonsChecked.length >= 2) {
+                var button = buttonsChecked[0];
+                button.ariaPressed = "false";
+                button.classList.remove("active")
+                buttonsChecked.shift();
+            }
+
+            buttonsChecked.push(clicked)
+
+            console.log(buttonsChecked)
+        }
+
+        function sacrifice() {
+            clicked = event.target;
+            if (buttonsChecked.length < 2) {
+                clicked.textContent = "Pick 2 letters!";
+
+                setTimeout(function() {
+                    clicked.textContent = "🔥 Sacrifice";
+                }, 2000);
+
+                return false
+            }
+
+            for(var i = 0; i < buttonsChecked.length; i++) {
+                var button = buttonsChecked[i];
+
+                letters = letters.concat(button.innerHTML)
+            }
+            console.log("Sacrifice", letters)
+
+            buttons = document.getElementsByClassName("col btn btn-light mx-1")
+            for(var i = 0; i < buttons.length; i++) {
+                var button = buttons[i];
+
+                if (button.ariaPressed == "true") {
+                    button.style.visibility = "hidden";
+                }
+
+                button.disabled = true;
+            }
+
+            clicked.disabled = true;
+
+            return true
+        }
+
+        function getExtra() {
+            var extra = document.getElementById('keyboard').outerHTML;
+            // console.log(extra)
+            return extra;
+        }
+
+        function stopWatch() { 
+            var ctr = 0; 
+            if (timer) { 
+                s++; 
+        
+                if (s == 60) { 
+                    m++; 
+                    s = 0; 
+                } 
+        
+                if (m == 60) { 
+                    h++; 
+                    m = 0; 
+                    s = 0; 
+                } 
+                
+                var hStr = h;
+                var mStr = m;
+                var sStr = s;
+
+                if (h < 10) { 
+                    hStr = "0" + h; 
+                } 
+        
+                if (m < 10) { 
+                    mStr = "0" + m; 
+                } 
+        
+                if (s < 10) { 
+                    sStr = "0" + s; 
+                } 
+        
+                document.getElementById('hr').innerHTML = hStr; 
+                document.getElementById('min').innerHTML = mStr; 
+                document.getElementById('sec').innerHTML = sStr; 
+                setTimeout(stopWatch, 1000); 
+            } 
+        }
+
+        function getTime() {
+            var hStr = h;
+            var mStr = m;
+            var sStr = s;
+
+            if (h < 10) { 
+                hStr = "0" + h; 
+            } 
+    
+            if (m < 10) { 
+                mStr = "0" + m; 
+            } 
+    
+            if (s < 10) { 
+                sStr = "0" + s; 
+            } 
+
+            var str = hStr+":"+mStr+":"+sStr
+            console.log(str)
+            return str;
+        }
+
+        function getTimeInt() {
+            return h*3600+m*60+s;
+        }
+    </script>
+
+</body>
+</html>
