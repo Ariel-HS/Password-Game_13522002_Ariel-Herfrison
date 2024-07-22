@@ -1,5 +1,7 @@
 package utility
 
+import "strconv"
+
 func IsLeap(year int) bool {
 	return (year%4 == 0 && year%100 != 0) || year%400 == 0
 }
@@ -21,4 +23,8 @@ func CheckLeap(acc int, password []rune) bool {
 	}
 
 	return CheckLeap(n*10, password[1:])
+}
+
+func getDigit(i int) int {
+	return len(strconv.Itoa(i))
 }
