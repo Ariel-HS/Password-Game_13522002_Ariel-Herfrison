@@ -25,6 +25,6 @@ func CheckLeap(acc int, password []rune) bool {
 	return CheckLeap(n*10, password[1:])
 }
 
-func getDigit(i int) int {
+func GetDigit(i int) int {
 	return len(strconv.Itoa(i))
 }

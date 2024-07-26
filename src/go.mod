@@ -1,4 +1,4 @@
-module password_game
+module github.com/Ariel-HS/Password-Game_13522002_Ariel-Herfrison
 
 go 1.22.2
 
