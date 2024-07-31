@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"math"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -145,7 +144,7 @@ func main() {
 				{Emoji: "❌", Text: "The Roman numerals in your password should multiply to 35"},
 				{Emoji: "❌", Text: "Your password must include 2 of these countries"},
 				{Emoji: "❌", Text: "Your password must include 2 Roman numerals"},
-				{Emoji: "❌", Text: "Your password must include 2 month of the year"},
+				{Emoji: "❌", Text: "Your password must include 2 different months of the year"},
 				{Emoji: "❌", Text: "The digits in your password must add up to 35"},
 				{Emoji: "❌", Text: "Your password must include 2 special characters (! @ # $ % ^ & * ( ) - _ = + \\ | [ ] { } ; : / ? . < > ' \")"},
 				{Emoji: "❌", Text: "Your password must include 3 uppercase letters"},
@@ -168,8 +167,8 @@ func main() {
 				{Emoji: "❌", Text: "The Roman numerals in your password should multiply to 35"},
 				{Emoji: "❌", Text: "Your password must include all of these countries"},
 				{Emoji: "❌", Text: "Your password must include 4 Roman numeral"},
-				{Emoji: "❌", Text: "Your password must include 3 months of the year"},
-				{Emoji: "❌", Text: "The digits in your password must add up to 25"},
+				{Emoji: "❌", Text: "Your password must include 3 different months of the year"},
+				{Emoji: "❌", Text: "The digits in your password must add up to 30"},
 				{Emoji: "❌", Text: "Your password must include 3 special characters (! @ # $ % ^ & * ( ) - _ = + \\ | [ ] { } ; : / ? . < > ' \")"},
 				{Emoji: "❌", Text: "Your password must include 5 uppercase letters"},
 				{Emoji: "❌", Text: "Your password must include 3 numbers"},
@@ -273,15 +272,7 @@ func main() {
 				isTrue = false
 			}
 
-			sqRoot := int(math.Sqrt(float64(num)))
-
-			for i := 2; i <= sqRoot && isTrue; i++ {
-				if num%i == 0 {
-					isTrue = false
-				}
-			}
-
-			if isTrue {
+			if isTrue && utility.CheckPrime(num) { // if isPrime and contains the needed numbers
 				Rules[1].Emoji = "✅"
 			} else {
 				Rules[1].Emoji = "❌"
@@ -319,14 +310,7 @@ func main() {
 			} else if difficulty == "hard" {
 				num = len(password) * 5 / 10
 			}
-			ctr := 0
-
-			for i := 0; i < len(password); i++ {
-				c := password[i]
-				if c >= '0' && c <= '9' {
-					ctr++
-				}
-			}
+			ctr := utility.GetNumberCount(password)
 
 			if ctr >= num {
 				Rules[3].Emoji = "✅"
@@ -483,23 +467,9 @@ func main() {
 		}
 
 		Rule6 := func(password []rune) {
-			months := []string{`january`, `february`, `march`, `april`, `may`, `june`, `july`, `august`, `september`, `october`, `november`, `december`}
-			ctr := 0
-			isTrue := false
-			for _, month := range months {
-				match, _ := regexp.MatchString(`(?i)`+month, string(password))
+			n := utility.GetMonthCount(password)
 
-				if match {
-					ctr++
-				}
-
-				if (difficulty == "easy" && ctr >= 1) || (difficulty == "normal" && ctr >= 2) || (difficulty == "hard" && ctr >= 3) {
-					isTrue = true
-					break
-				}
-			}
-
-			if isTrue {
+			if (difficulty == "easy" && n >= 1) || (difficulty == "normal" && n >= 2) || (difficulty == "hard" && n >= 3) {
 				Rules[14].Emoji = "✅"
 			} else {
 				Rules[14].Emoji = "❌"
@@ -522,7 +492,7 @@ func main() {
 
 			total := sum()
 
-			if (difficulty == "easy" && total == 45) || (difficulty == "normal" && total == 35) || (difficulty == "hard" && total == 25) {
+			if (difficulty == "easy" && total == 45) || (difficulty == "normal" && total == 35) || (difficulty == "hard" && total == 30) {
 				Rules[15].Emoji = "✅"
 
 			} else {
@@ -816,7 +786,8 @@ func main() {
 				r := regexp.MustCompile(`^(.*)🥚(.*)$`)
 				newPassword := r.ReplaceAllString(string(password), "${1}🐔$2")
 
-				str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
+				str := `<div id="inputEntry" class="form-control" style="position: relative; max-width: 650px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
+                        >` +
 					newPassword + `</div>`
 
 				tmpl, _ := template.New("t").Parse(str)
@@ -955,7 +926,8 @@ func main() {
 			if Rules[11].Emoji == "✅" {
 				if highScore < 10 && allCorrect() {
 					newPassword := string(password[:len(password)-1]) + "🔥"
-					str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
+					str := `<div id="inputEntry" class="form-control" style="position: relative; max-width: 650px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
+                        >` +
 						newPassword + `</div>`
 
 					tmpl, _ := template.New("t").Parse(str)
@@ -1118,7 +1090,7 @@ func main() {
 		fmt.Println("background:", background)
 		fmt.Println("password", string(password))
 
-		str = `<div id="inputBackground">` +
+		str = `<div id="inputBackground" class="form-control" style="position: absolute; border: none; max-width: 649px; word-wrap: break-word; display: inline-block;">` +
 			background + `</div>`
 		tmpl, _ = template.New("t").Parse(str)
 		tmpl.Execute(w, background)
@@ -1129,15 +1101,57 @@ func main() {
 		apply(w, r, password)
 	}
 
+	reCaptcha := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("ReCaptcha")
+		newCaptcha := captchas[rand.Intn(len(captchas))]
+		fmt.Println("before", captcha.answer, newCaptcha.answer)
+		for captcha.answer == newCaptcha.answer {
+			newCaptcha = captchas[rand.Intn(len(captchas))]
+		}
+		fmt.Println("after", captcha.answer, newCaptcha.answer)
+		captcha = newCaptcha
+
+		str := `<div class="row justify-content-center m-1">
+				<div class="col-3"></div>
+				<div class="col-3 align-self-center align-items-center justify-content-center" 
+				style="display: flex;" id="captcha">
+					<img src="` + captcha.image + `" width="96" height="64">
+				</div>
+				<div class="col-3 align-self-center align-items-center justify-content-start"
+				style="display: flex;">
+					<button class="btn"
+					type="submit" hx-post="/reCaptcha/"
+					hx-swap="multi:#rule-list:innerHTML,#inputBackground:innerHTML,#inputEntry:innerHTML,#Length:innerHTML,#timer-fire:outerHTML,#timer-paul:outerHTML,#game-over:outerHTML"  
+                    hx-vals='js:{password: getPassword(), extra: getExtra()}'
+                    hx-ext="multi-swap"
+					>
+						<font size="5">🔄</font>
+					</button>
+				</div>
+			</div>`
+
+		Rules[8].Extra = template.HTML(str)
+
+		if highScore > 14 {
+			newExtra := r.PostFormValue("extra")
+			Rules[5].Extra = template.HTML(newExtra)
+		}
+
+		password := []rune(r.PostFormValue("password"))
+		checkAndApply(w, r, password)
+	}
+
 	cheat := func(w http.ResponseWriter, r *http.Request, password []rune) {
 		reg := regexp.MustCompile("cheat")
 
 		password = []rune(reg.ReplaceAllString(string(password), ""))
+		// fmt.Println("PASSWORD: 2", string(password))
 
 		checkRules(password)
 
 		now := ""
 		length := ""
+		retry := false
 		Cheat5 := func(password []rune) []rune {
 			sum := func() int {
 				acc := 0
@@ -1151,8 +1165,17 @@ func main() {
 			}
 
 			total := sum()
-			if total != 45 && highScore >= 5 {
-				difference := 45 - total
+
+			difference := 0
+			if difficulty == "easy" {
+				difference = 45 - total
+			} else if difficulty == "normal" {
+				difference = 35 - total
+			} else if difficulty == "hard" {
+				difference = 30 - total
+			}
+
+			if difference != 0 && highScore >= 5 {
 				if difference > 0 {
 					temp := regexp.MustCompile("(.)$")
 					nums := ""
@@ -1168,7 +1191,6 @@ func main() {
 
 					password = []rune(temp.ReplaceAllString(string(password), "${0}"+nums))
 				} else {
-					// fmt.Println("AAAAA")
 					difference = -difference
 					tempPassword := string(password)
 					regCaptcha := regexp.MustCompile(captcha.answer)
@@ -1182,7 +1204,7 @@ func main() {
 						tempPassword[locTime[0]:locTime[1]],
 						tempPassword[locLength[0]:locLength[1]])
 
-					for i := 0; i < len(tempPassword) && difference > 0; i++ { // to-do: avoid captcha, time, and length
+					for i := 0; i < len(tempPassword) && difference > 0; i++ { // avoid captcha, time, and length
 						if locCaptcha != nil && i >= locCaptcha[0] && i < locCaptcha[1] { // if captcha exists and i is in captcha, skip
 							continue
 						}
@@ -1209,111 +1231,152 @@ func main() {
 						}
 					}
 
+					if difference > 0 {
+						// reCaptcha
+						fmt.Println("ReCaptcha try")
+						newCaptcha := captchas[rand.Intn(len(captchas))]
+						// fmt.Println("before", captcha.answer, newCaptcha.answer)
+						for captcha.answer == newCaptcha.answer {
+							newCaptcha = captchas[rand.Intn(len(captchas))]
+						}
+						// fmt.Println("after", captcha.answer, newCaptcha.answer)
+						captcha = newCaptcha
+						fmt.Println("after", captcha.answer)
+
+						str := `<div class="row justify-content-center m-1">
+								<div class="col-3"></div>
+								<div class="col-3 align-self-center align-items-center justify-content-center" 
+								style="display: flex;" id="captcha">
+									<img src="` + captcha.image + `" width="96" height="64">
+								</div>
+								<div class="col-3 align-self-center align-items-center justify-content-start"
+								style="display: flex;">
+									<button class="btn"
+									type="submit" hx-post="/reCaptcha/"
+									hx-swap="multi:#rule-list:innerHTML,#inputBackground:innerHTML,#inputEntry:innerHTML,#Length:innerHTML,#timer-fire:outerHTML,#timer-paul:outerHTML,#game-over:outerHTML"  
+									hx-vals='js:{password: getPassword(), extra: getExtra()}'
+									hx-ext="multi-swap"
+									>
+										<font size="5">🔄</font>
+									</button>
+								</div>
+							</div>`
+
+						Rules[8].Extra = template.HTML(str)
+
+						retry = true
+
+						tempPassword = tempPassword[:locCaptcha[0]] + tempPassword[locCaptcha[1]:]
+					}
+
 					password = []rune(tempPassword)
 				}
 			}
 
-			// Cheat5(password)
 			return password
 		}
-
-		// Cheat18 := func(password []rune) []rune {
-		// 	if Rules[2].Emoji != "✅" && highScore >= 18 {
-		// 		x := len(password)
-		// 		n := strconv.Itoa(x + (x % 10))
-		// 		temp := regexp.MustCompile("(.)$")
-
-		// 		password = []rune(temp.ReplaceAllString(string(password), "${0}"+n))
-		// 	}
-
-		// 	return Cheat5(password)
-		// }
 
 		Cheat18_19 := func(password []rune) []rune {
 			if highScore < 18 {
 				return Cheat5(password)
 			}
 
-			if highScore < 19 { // if rule 19 doesnt yet apply
-				passLength := len(password)
+			oldLength := len(password)
 
-				match, _ := regexp.MatchString(strconv.Itoa(passLength), string(password))
-				if !match {
-					nDigit := utility.GetDigit(passLength)
-					x := passLength + nDigit
+			// check rule 18
+			checkStr := ""
+			if difficulty == "easy" {
+				checkStr = strconv.Itoa(oldLength)
+			} else if difficulty == "normal" {
+				checkStr = strconv.Itoa(oldLength + 3)
+			} else if difficulty == "hard" {
+				checkStr = strconv.Itoa(oldLength + 13)
+			}
+			match, _ := regexp.MatchString(checkStr, string(password))
 
-					if utility.GetDigit(x) != nDigit {
-						x += 1
-					}
-
-					length = strconv.Itoa(x)
-
-					password = []rune(string(password) + length)
+			targetAppend := oldLength
+			if !match {
+				nDigit := utility.GetDigit(oldLength) // get digit of current password length
+				targetAppend += nDigit                // new length = old length + digit of old length
+				if difficulty == "normal" {
+					targetAppend += 3
+				} else if difficulty == "hard" {
+					targetAppend += 13
 				}
 
-				return Cheat5(password)
+				if utility.GetDigit(targetAppend) != nDigit { // if digit will change (e.g 99 -> 101)
+					targetAppend += 1 // modify the string
+				}
+
+				length = strconv.Itoa(targetAppend)
 			}
 
-			// if rule 18 & 19 applies
+			tempPassword := []rune(string(password) + length)
+			// fmt.Println("PASSWORD: 3", string(password))
+			newLength := len(tempPassword)
 
-			passLength := len(password)
-			match, _ := regexp.MatchString(string(passLength), string(password))
-
-			num := len(password)
-			sqRoot := int(math.Sqrt(float64(num)))
-
-			isPrime := true
-			for i := 2; i <= sqRoot; i++ {
-				if num%i == 0 {
-					isPrime = false
-					break
-				}
+			if highScore < 19 { // if rule 19 not apply, skip
+				return Cheat5(tempPassword)
 			}
 
-			if !match || !isPrime {
-				checkPrime := func(x int) bool {
-					sqRoot := int(math.Sqrt(float64(x)))
-					for i := 2; i <= sqRoot; i++ {
-						if x%i == 0 {
-							return false
-						}
-					}
-					return true
+			// check rule 19
+			// if new length is not prime and not contain necessary number
+			isPrime := utility.CheckPrime(newLength)
+			if !isPrime || ((difficulty == "normal" || difficulty == "hard") && !utility.HasNumber(newLength, 3)) || (difficulty == "hard" && !utility.HasNumber(newLength, 7)) {
+				// search the next length of password that is prime and contains the necessary number
+				targetLength := targetAppend + 1
+				for !utility.CheckPrime(targetLength) || targetLength < targetAppend+utility.GetDigit(targetAppend) ||
+					((difficulty == "normal" || difficulty == "hard") && !utility.HasNumber(targetLength, 3)) ||
+					(difficulty == "hard" && !utility.HasNumber(targetLength, 7)) {
+					targetLength++
 				}
 
-				// search the next length of password that is prime
-				primeLength := passLength + 1
-				for !checkPrime(primeLength) || primeLength < passLength+utility.GetDigit(passLength) {
-					primeLength++
-				}
-
-				appendStr := ""                                                  // string to be appended to password
-				diff := primeLength - passLength - utility.GetDigit(primeLength) // number of extra characters needed
+				appendStr := ""                                                   // string to be appended to password
+				diff := targetLength - oldLength - utility.GetDigit(targetLength) // number of extra characters needed
 				for j := 0; j < diff; j++ {
 					appendStr += "0"
 				}
-				length = strconv.Itoa(primeLength)
-				appendStr += length
+
+				if difficulty == "easy" {
+					length = strconv.Itoa(targetLength)
+					appendStr += length
+				} else if difficulty == "normal" {
+					appendStr += strconv.Itoa(targetLength + 3)
+					length = strconv.Itoa(targetLength + 3)
+				} else if difficulty == "hard" {
+					appendStr += strconv.Itoa(targetLength + 13)
+					length = strconv.Itoa(targetLength + 13)
+				}
 
 				password = []rune(string(password) + appendStr)
+				// fmt.Println("PASSWORD: 4", string(password))
 			}
 
+			// fmt.Println("PASSWORD: 5", string(password))
 			return Cheat5(password)
 		}
 
 		Cheat17 := func(password []rune) []rune {
-			n := len(password) * 3 / 10
-			ctr := 0
-
-			for i := 0; i < len(password); i++ {
-				c := password[i]
-				if c >= '0' && c <= '9' {
-					ctr++
-				}
+			n := 0
+			if difficulty == "easy" {
+				n = len(password) * 3 / 10
+			} else if difficulty == "normal" {
+				n = len(password) * 4 / 10
+			} else if difficulty == "hard" {
+				n = len(password) * 5 / 10
 			}
+			ctr := utility.GetNumberCount(password)
 
 			if ctr < n && highScore >= 17 {
-				num := len(password) * 3 / 7
+				// fmt.Println("Insufficient, ", ctr, n, string(password))
+				num := 0
+				if difficulty == "easy" {
+					num = len(password) * 3 / 7
+				} else if difficulty == "normal" {
+					num = len(password) * 2 / 3
+				} else if difficulty == "hard" {
+					num = len(password)
+				}
 
 				difference := num - ctr
 				nums := ""
@@ -1321,9 +1384,7 @@ func main() {
 					nums += "0"
 				}
 
-				temp := regexp.MustCompile("(.)$")
-
-				password = []rune(temp.ReplaceAllString(string(password), "${0}"+nums))
+				password = []rune(string(password) + nums)
 			}
 
 			return Cheat18_19(password)
@@ -1331,8 +1392,13 @@ func main() {
 
 		Cheat20 := func(password []rune) []rune {
 			if Rules[0].Emoji != "✅" && highScore >= 20 {
-				now = time.Now().Format("15:04")
-				fmt.Println("NOW", now)
+				if difficulty == "easy" {
+					now = time.Now().Format("15:04")
+				} else if difficulty == "normal" {
+					now = time.Now().Add(time.Hour * 2).Format("15:04")
+				} else if difficulty == "hard" {
+					now = time.Now().Add(time.Hour*2 + time.Minute*30).Format("15:04")
+				}
 				password = []rune(string(password) + now)
 			}
 
@@ -1341,9 +1407,39 @@ func main() {
 
 		Cheat16 := func(password []rune) []rune {
 			if Rules[4].Emoji != "✅" && highScore >= 16 {
-				temp := regexp.MustCompile("(.)$")
+				if difficulty == "easy" {
+					password = []rune(string(password) + "I want IRK")
+				} else if difficulty == "normal" {
+					match1, _ := regexp.MatchString(string(password), "I want IRK")
+					match2, _ := regexp.MatchString(string(password), "I need IRK")
+					match3, _ := regexp.MatchString(string(password), "I love IRK")
 
-				password = []rune(temp.ReplaceAllString(string(password), "${0}I want IRK"))
+					if !match1 && !match2 && match3 {
+						password = []rune(string(password) + "I want IRKI need IRK")
+					} else {
+						if !match1 {
+							password = []rune(string(password) + "I want IRK")
+						} else if !match2 {
+							password = []rune(string(password) + "I need IRK")
+						}
+					}
+				} else if difficulty == "hard" {
+					str := string(password)
+					match1, _ := regexp.MatchString(string(password), "I want IRK")
+					match2, _ := regexp.MatchString(string(password), "I need IRK")
+					match3, _ := regexp.MatchString(string(password), "I love IRK")
+
+					if !match1 {
+						str += "I want IRK"
+					}
+					if !match2 {
+						str += "I need IRK"
+					}
+					if !match3 {
+						str += "I love IRK"
+					}
+					password = []rune(str)
+				}
 			}
 
 			return Cheat20(password)
@@ -1354,7 +1450,13 @@ func main() {
 			match, _ := regexp.MatchString(`🐛`, string(password))
 
 			if !match {
-				password = []rune(temp.ReplaceAllString(string(password), "🐔🐛🐛🐛"))
+				if difficulty == "easy" {
+					password = []rune(temp.ReplaceAllString(string(password), "🐔🐛"))
+				} else if difficulty == "normal" {
+					password = []rune(temp.ReplaceAllString(string(password), "🐔🐛🐛"))
+				} else if difficulty == "hard" {
+					password = []rune(temp.ReplaceAllString(string(password), "🐔🐛🐛🐛"))
+				}
 			}
 
 			return Cheat16(password)
@@ -1499,9 +1601,39 @@ func main() {
 
 		Cheat8 := func(password []rune) []rune {
 			if Rules[12].Emoji != "✅" && highScore >= 8 {
-				temp := regexp.MustCompile("(.)$")
+				if difficulty == "easy" {
+					password = []rune(string(password) + country1.name)
+				} else if difficulty == "normal" {
+					match1, _ := regexp.MatchString(string(password), country1.name)
+					match2, _ := regexp.MatchString(string(password), country2.name)
+					match3, _ := regexp.MatchString(string(password), country3.name)
 
-				password = []rune(temp.ReplaceAllString(string(password), "${0}"+country1.name))
+					if !match1 && !match2 && match3 {
+						password = []rune(string(password) + country1.name + country2.name)
+					} else {
+						if !match1 {
+							password = []rune(string(password) + country1.name)
+						} else if !match2 {
+							password = []rune(string(password) + country2.name)
+						}
+					}
+				} else if difficulty == "hard" {
+					str := string(password)
+					match1, _ := regexp.MatchString(string(password), country1.name)
+					match2, _ := regexp.MatchString(string(password), country2.name)
+					match3, _ := regexp.MatchString(string(password), country3.name)
+
+					if !match1 {
+						str += country1.name
+					}
+					if !match2 {
+						str += country2.name
+					}
+					if !match3 {
+						str += country3.name
+					}
+					password = []rune(str)
+				}
 			}
 
 			return Cheat9(password)
@@ -1509,34 +1641,54 @@ func main() {
 
 		Cheat7 := func(password []rune) []rune {
 			if Rules[13].Emoji != "✅" && highScore >= 7 {
-				if highScore >= 9 {
-					password = []rune(string(password) + "XXXV")
-				} else {
-					password = []rune(string(password) + "I")
-				}
+				password = []rune(string(password) + "XXXV")
 			}
 
 			return Cheat8(password)
 		}
 
 		Cheat6 := func(password []rune) []rune {
+			if highScore >= 6 {
+				ctr := 0
+				if difficulty == "easy" {
+					ctr = 1 - utility.GetMonthCount(password)
+				} else if difficulty == "normal" {
+					ctr = 2 - utility.GetMonthCount(password)
+				} else if difficulty == "hard" {
+					ctr = 3 - utility.GetMonthCount(password)
+				}
 
-			if Rules[14].Emoji != "✅" && highScore >= 6 {
-				temp := regexp.MustCompile("(.)$")
+				str := string(password)
+				months := []string{`january`, `february`, `march`, `april`, `may`, `june`, `july`, `august`, `september`, `october`, `november`, `december`}
+				for i := 0; i < 12 && ctr > 0; i++ {
+					match, _ := regexp.MatchString(`(?i)`+months[i], str)
 
-				password = []rune(temp.ReplaceAllString(string(password), "${0}may"))
+					if !match {
+						ctr--
+						str += months[i]
+					}
+				}
+				password = []rune(str)
 			}
 
-			// return Cheat8(password)
-			// return password
 			return Cheat7(password)
 		}
 
 		Cheat4 := func(password []rune) []rune {
 			if Rules[16].Emoji != "✅" && highScore >= 4 {
-				temp := regexp.MustCompile("(.)$")
+				str := "@"
+				n := 0
+				if difficulty == "normal" {
+					n = 1 - utility.GetSCharCount(string(password))
+				} else if difficulty == "hard" {
+					n = 2 - utility.GetSCharCount(string(password))
+				}
 
-				password = []rune(temp.ReplaceAllString(string(password), "${0}@"))
+				for i := 0; i < n; i++ {
+					str += "@"
+				}
+
+				password = []rune(string(password) + str)
 			}
 
 			return Cheat6(password)
@@ -1544,9 +1696,19 @@ func main() {
 
 		Cheat3 := func(password []rune) []rune {
 			if Rules[17].Emoji != "✅" && highScore >= 3 {
-				temp := regexp.MustCompile("(.)$")
+				str := "A"
+				n := 0
+				if difficulty == "normal" {
+					n = 2 - utility.GetUppercaseCount(password)
+				} else if difficulty == "hard" {
+					n = 4 - utility.GetUppercaseCount(password)
+				}
 
-				password = []rune(temp.ReplaceAllString(string(password), "${0}A"))
+				for i := 0; i < n; i++ {
+					str += "A"
+				}
+
+				password = []rune(string(password) + str)
 			}
 
 			return Cheat4(password)
@@ -1555,9 +1717,19 @@ func main() {
 		Cheat2_13 := func(password []rune) []rune {
 
 			if (Rules[18].Emoji != "✅" && highScore >= 2) || (Rules[7].Emoji != "✅" && highScore > 12) {
-				temp := regexp.MustCompile("(.)$")
+				str := "0"
+				n := 0
+				if difficulty == "normal" {
+					n = 1 - utility.GetNumberCount(password)
+				} else if difficulty == "hard" {
+					n = 2 - utility.GetNumberCount(password)
+				}
 
-				password = []rune(temp.ReplaceAllString(string(password), "${0}0"))
+				for i := 0; i < n; i++ {
+					str += "0"
+				}
+
+				password = []rune(string(password) + str)
 			}
 
 			return Cheat3(password)
@@ -1567,7 +1739,17 @@ func main() {
 			if Rules[19].Emoji != "✅" {
 				temp := regexp.MustCompile("(.?)$")
 				a := ""
-				for i := 0; i < 5-len(password); i++ {
+
+				n := 0
+				if difficulty == "easy" {
+					n = 3 - len(password)
+				} else if difficulty == "normal" {
+					n = 5 - len(password)
+				} else if difficulty == "hard" {
+					n = 10 - len(password)
+				}
+
+				for i := 0; i < n; i++ {
 					a = temp.ReplaceAllString(a, "${0}a")
 				}
 
@@ -1582,11 +1764,18 @@ func main() {
 
 		// fmt.Println("Before cheat:", string(password))
 		password = Cheat1(password)
+		for retry {
+			fmt.Println("Retry")
+			retry = false
+			checkRules(password)
+			password = Cheat1(password)
+		}
 
 		checkAndApply(w, r, password)
 		newPassword := string(password)
 		fmt.Println("Cheat:", newPassword, highScore)
-		str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
+		str := `<div id="inputEntry" class="form-control" style="position: relative; max-width: 650px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
+                        >` +
 			newPassword + `</div>`
 
 		tmpl, _ := template.New("t").Parse(str)
@@ -1596,10 +1785,12 @@ func main() {
 	checkHelper := func(w http.ResponseWriter, r *http.Request) {
 		log.Print("Request received")
 		passwordStr := r.PostFormValue("password")
+		// fmt.Println("PASSWORD: ", passwordStr)
 		password := []rune(passwordStr)
 
 		match, _ := regexp.MatchString("cheat", passwordStr)
 		if match {
+			fmt.Println("Cheating")
 			cheat(w, r, password)
 
 			return
@@ -1647,7 +1838,8 @@ func main() {
 		newPassword := m.ReplaceAllString(string(password), "${1}🔥🔥$2")
 		password = []rune(newPassword)
 
-		str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
+		str := `<div id="inputEntry" class="form-control" style="position: relative; max-width: 650px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
+                        >` +
 			newPassword + `</div>`
 
 		tmpl, _ := template.New("t").Parse(str)
@@ -1658,46 +1850,6 @@ func main() {
 			Rules[5].Extra = template.HTML(newExtra)
 		}
 
-		checkAndApply(w, r, password)
-	}
-
-	reCaptcha := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("ReCaptcha")
-		newCaptcha := captchas[rand.Intn(len(captchas))]
-		fmt.Println("before", captcha.answer, newCaptcha.answer)
-		for captcha.answer == newCaptcha.answer {
-			newCaptcha = captchas[rand.Intn(len(captchas))]
-		}
-		fmt.Println("after", captcha.answer, newCaptcha.answer)
-		captcha = newCaptcha
-
-		str := `<div class="row justify-content-center m-1">
-				<div class="col-3"></div>
-				<div class="col-3 align-self-center align-items-center justify-content-center" 
-				style="display: flex;" id="captcha">
-					<img src="` + captcha.image + `" width="96" height="64">
-				</div>
-				<div class="col-3 align-self-center align-items-center justify-content-start"
-				style="display: flex;">
-					<button class="btn"
-					type="submit" hx-post="/reCaptcha/"
-					hx-swap="multi:#rule-list:innerHTML,#inputBackground:innerHTML,#inputEntry:innerHTML,#Length:innerHTML,#timer-fire:outerHTML,#timer-paul:outerHTML,#game-over:outerHTML"  
-                    hx-vals='js:{password: getPassword(), extra: getExtra()}'
-                    hx-ext="multi-swap"
-					>
-						<font size="5">🔄</font>
-					</button>
-				</div>
-			</div>`
-
-		Rules[8].Extra = template.HTML(str)
-
-		if highScore > 14 {
-			newExtra := r.PostFormValue("extra")
-			Rules[5].Extra = template.HTML(newExtra)
-		}
-
-		password := []rune(r.PostFormValue("password"))
 		checkAndApply(w, r, password)
 	}
 
@@ -1757,7 +1909,8 @@ func main() {
 		}
 
 		newPassword := m.ReplaceAllString(string(password), "${1}$2")
-		str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
+		str := `<div id="inputEntry" class="form-control" style="position: relative; max-width: 650px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
+                        >` +
 			newPassword + `</div>`
 
 		tmpl, _ := template.New("t").Parse(str)
@@ -1780,8 +1933,8 @@ func main() {
 		}
 
 		newExtra := r.PostFormValue("extra")
-		fmt.Println("New Extra")
-		fmt.Println(newExtra)
+		// fmt.Println("New Extra")
+		// fmt.Println(newExtra)
 		Rules[5].Emoji = "✅"
 		Rules[5].Extra = template.HTML(newExtra)
 
