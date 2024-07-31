@@ -28,3 +28,19 @@ func CheckLeap(acc int, password []rune) bool {
 func GetDigit(i int) int {
 	return len(strconv.Itoa(i))
 }
+
+func HasNumber(i int, x int) bool {
+	// check if x is in i
+	copy := i
+
+	for copy > 0 {
+		digit := copy % 10
+		copy = copy / 10
+
+		if digit == x {
+			return true
+		}
+	}
+
+	return false
+}

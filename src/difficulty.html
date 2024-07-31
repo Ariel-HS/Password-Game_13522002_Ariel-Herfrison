@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Game</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/multi-swap.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="body" class="flex-column" style="position: absolute; width: 100%; height: 100%; display: flex;">
+        <div class="row flex-grow-1 align-items-center justify-content-center" style="display: flex;font-size: 48;">
+            <div style="position: absolute; width: 100%; height: 100%; background-color: grey; opacity: 0.5;"></div>
+            <div class="align-self-center align-items-center justify-content-center" style="display: flex; height: 300px; background-color: black; color: white; position: absolute; width: 100%;">
+                <form class="row align-self-center justify-content-center" style="height: 100%;">
+                    <div style="font-size: 320%; text-align: center;">
+                        CHOOSE A DIFFICULTY
+                    </div>
+                    <div class="row align-items-center"
+                    style="font-size: 100;">
+                        <div class="col align-self-center justify-content-center"
+                        style="font-size: 120%; display: flex;">
+                            <input class="form-check-input" type="radio" name="difficulty" id="inlineRadio1" value="easy" style="text-align: center;">
+                            <label class="form-check-label" for="inlineRadio1">EASY</label>
+                        </div>
+                        <div class="col align-self-center justify-content-center"
+                        style="font-size: 120%; display: flex;">
+                            <input class="form-check-input" type="radio" name="difficulty" id="inlineRadio2" value="normal">
+                            <label class="form-check-label" for="inlineRadio2">NORMAL</label>
+                        </div>
+                        <div class="col align-self-center justify-content-center"
+                        style="font-size: 120%; display: flex;">
+                            <input class="form-check-input" type="radio" name="difficulty" id="inlineRadio3" value="hard">
+                            <label class="form-check-label" for="inlineRadio2">HARD</label>
+                        </div>
+                    </div>
+                    <div class="p-3" style="font-size: 150%; text-align: center;">
+                        <button type="submit" class="btn btn-primary" hx-post="/handle/" hx-target="#body" hx-swap="outerHTML">START</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

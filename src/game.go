@@ -39,34 +39,14 @@ func main() {
 	var superPauled bool
 	var highScore int
 	var combustible bool
-	Rules := []Rule{
-		{Emoji: "❌", Text: "Your password must include the current time"},
-		{Emoji: "❌", Text: "The length of your password must be a prime number"},
-		{Emoji: "❌", Text: "Your password must include the length of your password"},
-		{Emoji: "❌", Text: "At least 30% of your password must be in digits"},
-		{Emoji: "❌", Text: "Your password must contain one of the following words: I want IRK | I need IRK | I love IRK"},
-		{Emoji: "❌", Text: "A sacrifice must be made. Pick 2 letters that you will no longer be able to use"},
-		{Emoji: "❌", Text: "🐔 Paul has hatched ! Please don't forget to feed him. He eats 1 🐛 every 20 second"},
-		{Emoji: "❌", Text: "Your password must include a leap year"},
-		{Emoji: "❌", Text: "Your password must include this CAPTCHA"},
-		{Emoji: "❌", Text: "🥚 This is my chicken Paul. He hasn't hatched yet. Please put him in your password and keep him safe"},
-		{Emoji: "❌", Text: "Oh no! Your password is on fire 🔥. Quick, put it out!"},
-		{Emoji: "❌", Text: "The Roman numerals in your password should multiply to 35"},
-		{Emoji: "❌", Text: "Your password must include one of this country"},
-		{Emoji: "❌", Text: "Your password must include a Roman numeral"},
-		{Emoji: "❌", Text: "Your password must include a month of the year"},
-		{Emoji: "❌", Text: "The digits in your password must add up to 45"},
-		{Emoji: "❌", Text: "Your password must include a special character (! @ # $ % ^ & * ( ) - _ = + \\ | [ ] { } ; : / ? . < > ' \")"},
-		{Emoji: "❌", Text: "Your password must include an uppercase letter"},
-		{Emoji: "❌", Text: "Your password must include a number"},
-		{Emoji: "❌", Text: "Your password must be at least 5 characters"},
-	}
+	var Rules []Rule
 	var country1 Country
 	var country2 Country
 	var country3 Country
 	var captcha Captcha
 	bestTime := "-"
 	bestTimeInt := -1
+	var difficulty string
 
 	//--> Start of Database Setup <--//
 	db, _ := sql.Open("sqlite3", "password_game.db")
@@ -101,8 +81,12 @@ func main() {
 	//--> End of Database Setup <--//
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
+		difficulty = r.PostFormValue("difficulty")
+		if difficulty == "" {
+			tmpl := template.Must(template.ParseFiles("difficulty.html"))
+
+			tmpl.Execute(w, nil)
+
 			return
 		}
 
@@ -110,9 +94,87 @@ func main() {
 		superPauled = false
 		combustible = false
 		highScore = 1
-		for i := 0; i < len(Rules); i++ {
-			Rules[i].Emoji = "❌"
-			Rules[i].Extra = ""
+
+		country1 = countries[rand.Intn(len(countries))]
+		country2 = countries[rand.Intn(len(countries))]
+		for country1.name == country2.name {
+			country2 = countries[rand.Intn(len(countries))]
+		}
+		country3 = countries[rand.Intn(len(countries))]
+		for country1.name == country3.name || country2.name == country3.name {
+			country3 = countries[rand.Intn(len(countries))]
+		}
+		captcha = captchas[rand.Intn(len(captchas))]
+
+		if difficulty == "easy" {
+			Rules = []Rule{
+				{Emoji: "❌", Text: "Your password must include the current time"},
+				{Emoji: "❌", Text: "The length of your password must be a prime number"},
+				{Emoji: "❌", Text: "Your password must include the length of your password"},
+				{Emoji: "❌", Text: "At least 30% of your password must be in digits"},
+				{Emoji: "❌", Text: "Your password must contain one of the following words: I want IRK | I need IRK | I love IRK"},
+				{Emoji: "❌", Text: "A sacrifice must be made. Pick 2 letters that you will no longer be able to use"},
+				{Emoji: "❌", Text: "🐔 Paul has hatched ! Please don't forget to feed him. He eats 1 🐛 every 20 second"},
+				{Emoji: "❌", Text: "Your password must include a leap year"},
+				{Emoji: "❌", Text: "Your password must include this CAPTCHA"},
+				{Emoji: "❌", Text: "🥚 This is my chicken Paul. He hasn't hatched yet. Please put him in your password and keep him safe"},
+				{Emoji: "❌", Text: "Oh no! Your password is on fire 🔥. Quick, put it out!"},
+				{Emoji: "❌", Text: "The Roman numerals in your password should multiply to 35"},
+				{Emoji: "❌", Text: "Your password must include one of these countries"},
+				{Emoji: "❌", Text: "Your password must include a Roman numeral"},
+				{Emoji: "❌", Text: "Your password must include a month of the year"},
+				{Emoji: "❌", Text: "The digits in your password must add up to 45"},
+				{Emoji: "❌", Text: "Your password must include a special character (! @ # $ % ^ & * ( ) - _ = + \\ | [ ] { } ; : / ? . < > ' \")"},
+				{Emoji: "❌", Text: "Your password must include an uppercase letter"},
+				{Emoji: "❌", Text: "Your password must include a number"},
+				{Emoji: "❌", Text: "Your password must be at least 3 characters"},
+			}
+		} else if difficulty == "normal" {
+			Rules = []Rule{
+				{Emoji: "❌", Text: "Your password must include 2 hours after the current time"},
+				{Emoji: "❌", Text: "The length of your password must be a prime number that contains the number '3'"},
+				{Emoji: "❌", Text: "Your password must include the length of your password + 3"},
+				{Emoji: "❌", Text: "At least 40% of your password must be in digits"},
+				{Emoji: "❌", Text: "Your password must contain two of the following words: I want IRK | I need IRK | I love IRK"},
+				{Emoji: "❌", Text: "A sacrifice must be made. Pick 2 letters that you will no longer be able to use"},
+				{Emoji: "❌", Text: "🐔 Paul has hatched ! Please don't forget to feed him. He eats 2 🐛 every 20 second"},
+				{Emoji: "❌", Text: "Your password must include a leap year"},
+				{Emoji: "❌", Text: "Your password must include this CAPTCHA"},
+				{Emoji: "❌", Text: "🥚 This is my chicken Paul. He hasn't hatched yet. Please put him in your password and keep him safe"},
+				{Emoji: "❌", Text: "Oh no! Your password is on fire 🔥. Quick, put it out!"},
+				{Emoji: "❌", Text: "The Roman numerals in your password should multiply to 35"},
+				{Emoji: "❌", Text: "Your password must include 2 of these countries"},
+				{Emoji: "❌", Text: "Your password must include 2 Roman numerals"},
+				{Emoji: "❌", Text: "Your password must include 2 month of the year"},
+				{Emoji: "❌", Text: "The digits in your password must add up to 35"},
+				{Emoji: "❌", Text: "Your password must include 2 special characters (! @ # $ % ^ & * ( ) - _ = + \\ | [ ] { } ; : / ? . < > ' \")"},
+				{Emoji: "❌", Text: "Your password must include 3 uppercase letters"},
+				{Emoji: "❌", Text: "Your password must include 2 number"},
+				{Emoji: "❌", Text: "Your password must be at least 5 characters"},
+			}
+		} else if difficulty == "hard" {
+			Rules = []Rule{
+				{Emoji: "❌", Text: "Your password must include 2 hours and 30 minutes after the current time"},
+				{Emoji: "❌", Text: "The length of your password must be a prime number that contains the number '3' and '7'"},
+				{Emoji: "❌", Text: "Your password must include the length of your password + 13"},
+				{Emoji: "❌", Text: "At least 50% of your password must be in digits"},
+				{Emoji: "❌", Text: "Your password must contain all of the following words: I want IRK | I need IRK | I love IRK"},
+				{Emoji: "❌", Text: "A sacrifice must be made. Pick 2 letters that you will no longer be able to use"},
+				{Emoji: "❌", Text: "🐔 Paul has hatched ! Please don't forget to feed him. He eats 3 🐛 every 20 second"},
+				{Emoji: "❌", Text: "Your password must include a leap year"},
+				{Emoji: "❌", Text: "Your password must include this CAPTCHA"},
+				{Emoji: "❌", Text: "🥚 This is my chicken Paul. He hasn't hatched yet. Please put him in your password and keep him safe"},
+				{Emoji: "❌", Text: "Oh no! Your password is on fire 🔥. Quick, put it out!"},
+				{Emoji: "❌", Text: "The Roman numerals in your password should multiply to 35"},
+				{Emoji: "❌", Text: "Your password must include all of these countries"},
+				{Emoji: "❌", Text: "Your password must include 4 Roman numeral"},
+				{Emoji: "❌", Text: "Your password must include 3 months of the year"},
+				{Emoji: "❌", Text: "The digits in your password must add up to 25"},
+				{Emoji: "❌", Text: "Your password must include 3 special characters (! @ # $ % ^ & * ( ) - _ = + \\ | [ ] { } ; : / ? . < > ' \")"},
+				{Emoji: "❌", Text: "Your password must include 5 uppercase letters"},
+				{Emoji: "❌", Text: "Your password must include 3 numbers"},
+				{Emoji: "❌", Text: "Your password must be at least 10 characters"},
+			}
 		}
 		Rules[5].Extra = `<div class="row justify-content-center m-1" id="keyboard">
 						<div class="row justify-content-center m-1">
@@ -159,18 +221,6 @@ func main() {
 						</div>
 					</div>`
 
-		country1 = countries[rand.Intn(len(countries))]
-		country2 = countries[rand.Intn(len(countries))]
-		for country1.name == country2.name {
-			country2 = countries[rand.Intn(len(countries))]
-		}
-		country3 = countries[rand.Intn(len(countries))]
-		for country1.name == country3.name || country2.name == country3.name {
-			country3 = countries[rand.Intn(len(countries))]
-		}
-
-		captcha = captchas[rand.Intn(len(captchas))]
-
 		tmpl := template.Must(template.ParseFiles("index.html"))
 
 		rules := map[string][]Rule{
@@ -180,9 +230,27 @@ func main() {
 		tmpl.Execute(w, rules)
 	}
 
+	selectHandler := func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		tmpl := template.Must(template.ParseFiles("difficulty.html"))
+
+		tmpl.Execute(w, nil)
+	}
+
 	checkRules := func(password []rune) {
 		Rule20 := func(password []rune) {
-			now := time.Now().Format("15:04")
+			now := ""
+			if difficulty == "easy" {
+				now = time.Now().Format("15:04")
+			} else if difficulty == "normal" {
+				now = time.Now().Add(time.Hour * 2).Format("15:04")
+			} else if difficulty == "hard" {
+				now = time.Now().Add(time.Hour*2 + time.Minute*30).Format("15:04")
+			}
 			// fmt.Println(now)
 
 			match, _ := regexp.MatchString(now, string(password))
@@ -196,16 +264,24 @@ func main() {
 
 		Rule19 := func(password []rune) {
 			num := len(password)
+
+			isTrue := true
+
+			if difficulty == "normal" && !utility.HasNumber(num, 3) {
+				isTrue = false
+			} else if difficulty == "hard" && (!utility.HasNumber(num, 3) || !utility.HasNumber(num, 7)) {
+				isTrue = false
+			}
+
 			sqRoot := int(math.Sqrt(float64(num)))
 
-			isPrime := true
-			for i := 2; i <= sqRoot; i++ {
+			for i := 2; i <= sqRoot && isTrue; i++ {
 				if num%i == 0 {
-					isPrime = false
+					isTrue = false
 				}
 			}
 
-			if isPrime {
+			if isTrue {
 				Rules[1].Emoji = "✅"
 			} else {
 				Rules[1].Emoji = "❌"
@@ -215,7 +291,14 @@ func main() {
 		}
 
 		Rule18 := func(password []rune) {
-			num := strconv.Itoa(len(password))
+			num := ""
+			if difficulty == "easy" {
+				num = strconv.Itoa(len(password))
+			} else if difficulty == "normal" {
+				num = strconv.Itoa(len(password) + 3)
+			} else if difficulty == "hard" {
+				num = strconv.Itoa(len(password) + 13)
+			}
 			match, _ := regexp.MatchString(num, string(password))
 
 			if match {
@@ -228,7 +311,14 @@ func main() {
 		}
 
 		Rule17 := func(password []rune) {
-			num := len(password) * 3 / 10
+			num := 0
+			if difficulty == "easy" {
+				num = len(password) * 3 / 10
+			} else if difficulty == "normal" {
+				num = len(password) * 4 / 10
+			} else if difficulty == "hard" {
+				num = len(password) * 5 / 10
+			}
 			ctr := 0
 
 			for i := 0; i < len(password); i++ {
@@ -248,7 +338,16 @@ func main() {
 		}
 
 		Rule16 := func(password []rune) {
-			match, _ := regexp.MatchString("(I want IRK)|(I need IRK)|(I love IRK)", string(password))
+			var match bool
+			if difficulty == "easy" {
+				match, _ = regexp.MatchString("(I want IRK)|(I need IRK)|(I love IRK)", string(password))
+			} else if difficulty == "normal" {
+				reg := regexp.MustCompile(`(I want IRK).*((I need IRK)|(I love IRK))|(I need IRK).*((I want IRK)|(I love IRK))|(I love IRK).*((I want IRK)|(I need IRK))`)
+				match = reg.MatchString(string(password))
+			} else if difficulty == "hard" {
+				reg := regexp.MustCompile(`(I want IRK).*((I need IRK).*(I love IRK)|(I love IRK).*(I need IRK))|(I need IRK).*((I want IRK).*(I love IRK)|(I love IRK).*(I want IRK))|(I love IRK).*((I want IRK).*(I need IRK)|(I need IRK).*(I want IRK))`)
+				match = reg.MatchString(string(password))
+			}
 
 			if match {
 				Rules[4].Emoji = "✅"
@@ -345,7 +444,14 @@ func main() {
 
 		Rule8 := func(password []rune) {
 			// fmt.Println("Country", country1.name, country2.name, country3.name)
-			str := `(?i)(` + country1.name + `)|(` + country2.name + `)|(` + country3.name + `)`
+			str := ""
+			if difficulty == "easy" {
+				str = `(?i)((` + country1.name + `)|(` + country2.name + `)|(` + country3.name + `))`
+			} else if difficulty == "normal" {
+				str = `(?i)((` + country1.name + `)((` + country2.name + `)|(` + country3.name + `))|(` + country2.name + `)((` + country1.name + `)|(` + country3.name + `))|(` + country3.name + `)((` + country1.name + `)|(` + country2.name + `)))`
+			} else if difficulty == "hard" {
+				str = `(?i)((` + country1.name + `)((` + country2.name + `)(` + country3.name + `)|(` + country3.name + `)(` + country2.name + `))|(` + country2.name + `)((` + country1.name + `)(` + country3.name + `)|(` + country3.name + `)(` + country1.name + `))|(` + country3.name + `)((` + country1.name + `)(` + country2.name + `)|(` + country2.name + `)(` + country1.name + `)))`
+			}
 			r := regexp.MustCompile(str)
 			match := r.MatchString(string(password))
 			if match {
@@ -358,8 +464,15 @@ func main() {
 		}
 
 		Rule7 := func(password []rune) {
-			r := regexp.MustCompile(`[IVXLCDM]`)
-			match := r.MatchString(string(password))
+			var reg *regexp.Regexp
+			if difficulty == "easy" {
+				reg = regexp.MustCompile(`[IVXLCDM]`)
+			} else if difficulty == "normal" {
+				reg = regexp.MustCompile(`[IVXLCDM].*[IVXLCDM]`)
+			} else if difficulty == "hard" {
+				reg = regexp.MustCompile(`[IVXLCDM].*[IVXLCDM].*[IVXLCDM].*[IVXLCDM]`)
+			}
+			match := reg.MatchString(string(password))
 			if match {
 				Rules[13].Emoji = "✅"
 			} else {
@@ -370,9 +483,23 @@ func main() {
 		}
 
 		Rule6 := func(password []rune) {
-			r := regexp.MustCompile(`(?i)(january)|(february)|(march)|(april)|(may)|(june)|(july)|(august)|(september)|(october)|(november)|(december)`)
-			match := r.MatchString(string(password))
-			if match {
+			months := []string{`january`, `february`, `march`, `april`, `may`, `june`, `july`, `august`, `september`, `october`, `november`, `december`}
+			ctr := 0
+			isTrue := false
+			for _, month := range months {
+				match, _ := regexp.MatchString(`(?i)`+month, string(password))
+
+				if match {
+					ctr++
+				}
+
+				if (difficulty == "easy" && ctr >= 1) || (difficulty == "normal" && ctr >= 2) || (difficulty == "hard" && ctr >= 3) {
+					isTrue = true
+					break
+				}
+			}
+
+			if isTrue {
 				Rules[14].Emoji = "✅"
 			} else {
 				Rules[14].Emoji = "❌"
@@ -395,7 +522,7 @@ func main() {
 
 			total := sum()
 
-			if total == 45 {
+			if (difficulty == "easy" && total == 45) || (difficulty == "normal" && total == 35) || (difficulty == "hard" && total == 25) {
 				Rules[15].Emoji = "✅"
 
 			} else {
@@ -406,7 +533,14 @@ func main() {
 		}
 
 		Rule4 := func(password []rune) {
-			match, _ := regexp.MatchString("[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"]", string(password))
+			match := false
+			if difficulty == "easy" {
+				match, _ = regexp.MatchString("[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"]", string(password))
+			} else if difficulty == "normal" {
+				match, _ = regexp.MatchString("[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"].*[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"]", string(password))
+			} else if difficulty == "hard" {
+				match, _ = regexp.MatchString("[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"].*[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"].*[!@#$%^&*()\\-_=+\\\\|\\[\\]{};:\\/?.<>'\"]", string(password))
+			}
 
 			if match {
 				Rules[16].Emoji = "✅"
@@ -418,7 +552,14 @@ func main() {
 		}
 
 		Rule3 := func(password []rune) {
-			match, _ := regexp.MatchString("[A-Z]", string(password))
+			match := false
+			if difficulty == "easy" {
+				match, _ = regexp.MatchString("[A-Z]", string(password))
+			} else if difficulty == "normal" {
+				match, _ = regexp.MatchString("[A-Z].*[A-Z].*[A-Z]", string(password))
+			} else if difficulty == "hard" {
+				match, _ = regexp.MatchString("[A-Z].*[A-Z].*[A-Z].*[A-Z].*[A-Z]", string(password))
+			}
 
 			if match {
 				Rules[17].Emoji = "✅"
@@ -430,7 +571,14 @@ func main() {
 		}
 
 		Rule2 := func(password []rune) {
-			match, _ := regexp.MatchString("[0-9]", string(password))
+			match := false
+			if difficulty == "easy" {
+				match, _ = regexp.MatchString("[0-9]", string(password))
+			} else if difficulty == "normal" {
+				match, _ = regexp.MatchString("[0-9].*[0-9]", string(password))
+			} else if difficulty == "hard" {
+				match, _ = regexp.MatchString("[0-9].*[0-9].*[0-9]", string(password))
+			}
 
 			if match {
 				Rules[18].Emoji = "✅"
@@ -442,7 +590,7 @@ func main() {
 		}
 
 		Rule1 := func(password []rune) {
-			if len(password) >= 5 {
+			if (difficulty == "easy" && len(password) >= 3) || (difficulty == "normal" && len(password) >= 5) || (difficulty == "hard" && len(password) >= 10) {
 				Rules[19].Emoji = "✅"
 			} else {
 				Rules[19].Emoji = "❌"
@@ -1559,7 +1707,14 @@ func main() {
 		}
 
 		password := []rune(r.PostFormValue("password"))
-		m := regexp.MustCompile(`^(.*?)🐛(.*)`)
+		var m *regexp.Regexp
+		if difficulty == "easy" {
+			m = regexp.MustCompile(`^(.*?)🐛(.*)`)
+		} else if difficulty == "normal" {
+			m = regexp.MustCompile(`^(.*?)🐛(.*?)🐛(.*?)`)
+		} else { // difficulty == "hard"
+			m = regexp.MustCompile(`^(.*?)🐛(.*?)🐛(.*?)🐛(.*?)`)
+		}
 		match := m.MatchString(string(password))
 		if superPauled && !match {
 			fmt.Println("failure")
@@ -1634,7 +1789,8 @@ func main() {
 		checkAndApply(w, r, password)
 	}
 
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", selectHandler)
+	http.HandleFunc("/handle/", handler)
 	http.HandleFunc("/check/", checkHelper)
 	http.HandleFunc("/timerFire/", timerFire)
 	http.HandleFunc("/reCaptcha/", reCaptcha)
