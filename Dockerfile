@@ -7,13 +7,13 @@ RUN apk add --no-cache gcc musl-dev sqlite-dev
 WORKDIR /app
 
 # Copy go.mod and go.sum files to download dependencies
-COPY go.mod go.sum ./
+COPY /src/go.mod /src/go.sum ./
 
 # Download dependencies
 RUN go mod tidy
 
-# Copy the source from the current directory to the Working Directory inside the container
-COPY . .
+# Copy the source to the Working Directory inside the container
+COPY /src/. ./
 
 # Build the Go app
 RUN go build -o main game.go
