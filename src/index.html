@@ -12,6 +12,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </head>
 <body>
+     <!-- Start Toolbar -->
+    <!-- <div class="navbar bg-body-tertiary justify-content-end" style="display: flex;">
+        <button class="btn btn-primary mx-3" type="submit" 
+        hx-post="/save/" 
+        >SAVE</button>
+        <button class="btn btn-primary mx-3" type="submit" 
+        hx-post="/load/"
+        hx-swap="multi:#rule-list:innerHTML,#inputBackground:innerHTML,#inputEntry:innerHTML,#Length:innerHTML,#timer-fire:outerHTML,#timer-paul:outerHTML,#game-over:outerHTML,#hr:innerHTML,#min:innerHTML,#sec:innerHTML" 
+        hx-ext="multi-swap"
+        >LOAD</button>
+    </div> -->
+    <!-- End Toolbar -->
+
     <h1 id="title" style="text-align: center;">Password Game</h2>
 
     <div style="position: absolute; width: 100%;">
@@ -148,11 +161,11 @@
     </div>
     <!-- End Rules Display -->
 
-    <!-- Start How To Use -->
+    <!-- Start How To Play -->
     <div class="container mt-5">
         <div class="row justify-content-center g-3">
             <div class="col-md-8">
-                <h3>How To Use</h3>
+                <h3>How To Play</h3>
                 <ol style="display: inline-block; text-align: left;">
                     <li>Select the string matching algorithm</li>
                     <li>Enter a password</li>
@@ -163,7 +176,7 @@
             </div>
         </div>
     </div>
-    <!-- End How To Use -->
+    <!-- End How To Play -->
     </div>
 
     <div id="timer-fire">

@@ -48,7 +48,13 @@ func main() {
 	var difficulty string
 
 	//--> Start of Database Setup <--//
-	db, _ := sql.Open("sqlite3", "password_game.db")
+	db, err := sql.Open("sqlite3", "password_game.db")
+
+	if err != nil {
+		fmt.Println("Database not found")
+		return
+	}
+	defer db.Close()
 
 	rowsCountry, _ := db.Query(`
 		SELECT * FROM country
@@ -75,8 +81,6 @@ func main() {
 
 		captchas = append(captchas, Captcha{answer: answer, image: image})
 	}
-
-	db.Close()
 	//--> End of Database Setup <--//
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -1942,6 +1946,22 @@ func main() {
 		checkAndApply(w, r, password)
 	}
 
+	// save := func(w http.ResponseWriter, r *http.Request) {
+
+	// }
+
+	// load := func(w http.ResponseWriter, r *http.Request) {
+	// 	// saveFiles, _ := db.Query(`
+	// 	// 	SELECT * FROM save
+	// 	// `)
+	// 	query, _ := db.Prepare(`INSERT INTO save (date, difficulty, time, entry, background, highscore, country1, country2, country3, captcha, sacrifice) VALUES
+	// 	(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	// 	`)
+	// 	//date, diff, time, entr, bg, hs, c1, c2, c3, capt, sac
+	// 	time := time.Now().Format("2006-01-02")
+	// 	query.Exec(time, difficulty, "", "", "", highScore, country1.name, country2.name, country3.name, captcha.answer, "")
+	// }
+
 	http.HandleFunc("/", selectHandler)
 	http.HandleFunc("/handle/", handler)
 	http.HandleFunc("/check/", checkHelper)
@@ -1949,5 +1969,7 @@ func main() {
 	http.HandleFunc("/reCaptcha/", reCaptcha)
 	http.HandleFunc("/timerPaul/", timerPaul)
 	http.HandleFunc("/sacrifice/", sacrifice)
+	// http.HandleFunc("/save/", save)
+	// http.HandleFunc("/load/", load)
 	http.ListenAndServe(":1334", nil)
 }
