@@ -1814,24 +1814,24 @@ func main() {
 		match, _ := regexp.MatchString("🔥", string(password))
 		if !match {
 			// 1/30 chance to occur again
-			// if rand.Intn(30) == 1 {
-			// 	newPassword := string(password[:len(password)-1]) + "🔥"
-			// 	str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
-			// 		newPassword + `</div>`
+			if rand.Intn(30) == 1 {
+				newPassword := string(password[:len(password)-1]) + "🔥"
+				str := `<div id="inputEntry" class="form-control" style="position: absolute; width: 700px; background: transparent; display: flex;" contenteditable="true">` +
+					newPassword + `</div>`
 
-			// 	tmpl, _ := template.New("t").Parse(str)
-			// 	tmpl.Execute(w, str)
+				tmpl, _ := template.New("t").Parse(str)
+				tmpl.Execute(w, str)
 
-			// 	fire := []rune("🔥")[0]
-			// 	password[len(password)-1] = fire
+				fire := []rune("🔥")[0]
+				password[len(password)-1] = fire
 
-			// 	if highScore > 14 {
-			// 		newExtra := r.PostFormValue("extra")
-			// 		Rules[5].Extra = template.HTML(newExtra)
-			// 	}
+				if highScore > 14 {
+					newExtra := r.PostFormValue("extra")
+					Rules[5].Extra = template.HTML(newExtra)
+				}
 
-			// 	checkAndApply(w, r, password)
-			// }
+				checkAndApply(w, r, password)
+			}
 
 			return
 		}
