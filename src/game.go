@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
-	"log"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -14,8 +13,6 @@ import (
 	"github.com/Ariel-HS/Password-Game_13522002_Ariel-Herfrison/utility"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-// import "./utility/utility.go"
 
 type Rule struct {
 	Emoji string
@@ -85,6 +82,8 @@ func main() {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		difficulty = r.PostFormValue("difficulty")
+
+		// check if difficulty is selected
 		if difficulty == "" {
 			tmpl := template.Must(template.ParseFiles("difficulty.html"))
 
@@ -93,11 +92,13 @@ func main() {
 			return
 		}
 
+		// initialize global variable
 		pauled = false
 		superPauled = false
 		combustible = false
 		highScore = 1
 
+		// get country for current session
 		country1 = countries[rand.Intn(len(countries))]
 		country2 = countries[rand.Intn(len(countries))]
 		for country1.name == country2.name {
@@ -109,6 +110,7 @@ func main() {
 		}
 		captcha = captchas[rand.Intn(len(captchas))]
 
+		// set rules based on difficulty
 		if difficulty == "easy" {
 			Rules = []Rule{
 				{Emoji: "❌", Text: "Your password must include the current time"},
@@ -179,6 +181,7 @@ func main() {
 				{Emoji: "❌", Text: "Your password must be at least 10 characters"},
 			}
 		}
+		// reset extra html elements
 		Rules[5].Extra = `<div class="row justify-content-center m-1" id="keyboard">
 						<div class="row justify-content-center m-1">
 							<button data-bs-toggle="button" data-bs-toggle="button" class="col btn btn-light mx-1" onclick="buttonPress()">A</button>
@@ -224,6 +227,7 @@ func main() {
 						</div>
 					</div>`
 
+		// display main-screen
 		tmpl := template.Must(template.ParseFiles("index.html"))
 
 		rules := map[string][]Rule{
@@ -239,6 +243,7 @@ func main() {
 			return
 		}
 
+		// display difficulty screen
 		tmpl := template.Must(template.ParseFiles("difficulty.html"))
 
 		tmpl.Execute(w, nil)
@@ -407,10 +412,8 @@ func main() {
 		Rule10 := func(password []rune) {
 			match, _ := regexp.MatchString("🔥", string(password))
 			if !match {
-				// fmt.Println("check this")
 				Rules[10].Emoji = "✅"
 			} else {
-				// fmt.Println("onfire")
 				Rules[10].Emoji = "❌"
 			}
 
@@ -418,7 +421,6 @@ func main() {
 		}
 
 		Rule9 := func(password []rune) {
-			// (\s*I*\s+)*
 			r := regexp.MustCompile(`^((I?[^IVXLCDM]+)*XXXV([^IVXLCDM]+I?)*)$|^((I?[^IVXLCDM]+)*V[^IVXLCDM]+(I?[^IVXLCDM]+)*VII([^IVXLCDM]+I?)*)$|^((I?[^IVXLCDM]+)*VII[^IVXLCDM]+(I?[^IVXLCDM]+)*V([^IVXLCDM]+I?)*)$`)
 			match := r.MatchString(string(password))
 			if match {
@@ -576,7 +578,9 @@ func main() {
 		Rule1(password)
 	}
 
+	// apply rules, make changes to page
 	apply := func(w http.ResponseWriter, r *http.Request, password []rune) {
+		// initialize background for highlights
 		background := ""
 
 		allCorrect := func() bool {
@@ -605,6 +609,7 @@ func main() {
 					bestTime = timeStr
 				}
 
+				// display win screen
 				str := `<div id="game-over" class="flex-column" style="position: absolute; width: 100%; height: 100%; display: flex;">
 							<div class="row flex-grow-1 align-items-center justify-content-center" style="display: flex;font-size: 48;">
 								<div style="position: absolute; width: 100%; height: 100%; background-color: grey; opacity: 0.5;"></div>
@@ -705,8 +710,8 @@ func main() {
 			if Rules[6].Emoji == "❌" {
 				fmt.Println("failure")
 
+				// display game-over screen
 				time := r.PostFormValue("time")
-
 				str := `<div id="game-over" class="flex-column" style="position: absolute; width: 100%; height: 100%; display: flex;">
 							<div class="row flex-grow-1 align-items-center justify-content-center" style="display: flex;font-size: 48;">
 								<div style="position: absolute; width: 100%; height: 100%; background-color: grey; opacity: 0.5;"></div>
@@ -744,6 +749,7 @@ func main() {
 			if highScore < 15 {
 				highScore = 15
 
+				// modify reCaptcha post to send extra values (sacrifice input)
 				str := `<div class="row justify-content-center m-1">
 								<div class="col-3"></div>
 								<div class="col-3 align-self-center align-items-center justify-content-center" 
@@ -765,6 +771,7 @@ func main() {
 
 				Rules[8].Extra = template.HTML(str)
 
+				// modify timer post to send extra values (sacrifice input)
 				str = `<div id = "timer-fire">
 								<div
 								hx-post="/timerFire/"
@@ -803,6 +810,7 @@ func main() {
 				pauled = false
 				superPauled = true
 
+				// start timer for worm
 				str = `<div id = "timer-paul">
 							<div
 							hx-post="/timerPaul/"
@@ -843,8 +851,8 @@ func main() {
 			if pauled && Rules[9].Emoji == "❌" {
 				fmt.Println("failure")
 
+				// display game-over screen
 				time := r.PostFormValue("time")
-
 				str := `<div id="game-over" class="flex-column" style="position: absolute; width: 100%; height: 100%; display: flex;">
 							<div class="row flex-grow-1 align-items-center justify-content-center" style="display: flex;font-size: 48;">
 								<div style="position: absolute; width: 100%; height: 100%; background-color: grey; opacity: 0.5;"></div>
@@ -914,7 +922,6 @@ func main() {
 				return
 			}
 
-			// fmt.Println("check this")
 			if highScore < 11 && allCorrect() {
 				highScore = 11
 			}
@@ -929,6 +936,7 @@ func main() {
 
 			if Rules[11].Emoji == "✅" {
 				if highScore < 10 && allCorrect() {
+					// replace end of password with fire
 					newPassword := string(password[:len(password)-1]) + "🔥"
 					str := `<div id="inputEntry" class="form-control" style="position: relative; max-width: 650px; background: transparent; word-wrap: break-word; display: inline-block;" contenteditable="true"
                         >` +
@@ -943,7 +951,7 @@ func main() {
 					password[len(password)-1] = fire
 					background = string(password)
 
-					// fmt.Println("Called")
+					// initialize timer for fire
 					str = `<div id = "timer-fire">
 								<div
 								hx-post="/timerFire/"
@@ -960,6 +968,7 @@ func main() {
 				}
 			} else {
 				m := regexp.MustCompile(`[IVXLCDM]`)
+				// highlight numbers
 				background = m.ReplaceAllString(string(password), `<span style="background-color: firebrick;">${0}</span>`)
 			}
 
@@ -986,6 +995,7 @@ func main() {
 			if highScore < 8 && allCorrect() {
 				highScore = 8
 
+				// display countries
 				str := `<div class="row justify-content-center m1-3">
 							<div class="col-3"><img src="` + country1.flag + `" width="96" height="64"></div>
 							<div class="col-3"><img src="` + country2.flag + `" width="96" height="64"></div>
@@ -1073,27 +1083,28 @@ func main() {
 
 		background = string(password)
 		passLength := len(password)
-		log.Print(passLength)
+		// log.Print(passLength)
 
 		Rule1(password)
 
+		// display extra rules
 		tmpl := template.Must(template.ParseFiles("index.html"))
-
-		fmt.Println(highScore)
-		// fmt.Println(Rules[(20 - highScore):])
+		// fmt.Println(highScore)
 		rules := map[string][]Rule{
 			"Rules": Rules[(20 - highScore):],
 		}
 
 		tmpl.ExecuteTemplate(w, "rule-list-element", rules)
 
+		// change password length label
 		str := `<label id="Length" for="Length" class="form-label">` + strconv.Itoa(passLength) + `</label>`
 		tmpl, _ = template.New("t").Parse(str)
 		tmpl.Execute(w, passLength)
 
-		fmt.Println("background:", background)
-		fmt.Println("password", string(password))
+		// fmt.Println("background:", background)
+		// fmt.Println("password", string(password))
 
+		// change background
 		str = `<div id="inputBackground" class="form-control" style="position: absolute; border: none; max-width: 649px; word-wrap: break-word; display: inline-block;">` +
 			background + `</div>`
 		tmpl, _ = template.New("t").Parse(str)
@@ -1106,15 +1117,14 @@ func main() {
 	}
 
 	reCaptcha := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("ReCaptcha")
+		// fmt.Println("ReCaptcha")
 		newCaptcha := captchas[rand.Intn(len(captchas))]
-		fmt.Println("before", captcha.answer, newCaptcha.answer)
 		for captcha.answer == newCaptcha.answer {
 			newCaptcha = captchas[rand.Intn(len(captchas))]
 		}
-		fmt.Println("after", captcha.answer, newCaptcha.answer)
 		captcha = newCaptcha
 
+		// display new captcha
 		str := `<div class="row justify-content-center m-1">
 				<div class="col-3"></div>
 				<div class="col-3 align-self-center align-items-center justify-content-center" 
@@ -1149,7 +1159,6 @@ func main() {
 		reg := regexp.MustCompile("cheat")
 
 		password = []rune(reg.ReplaceAllString(string(password), ""))
-		// fmt.Println("PASSWORD: 2", string(password))
 
 		checkRules(password)
 
@@ -1316,7 +1325,6 @@ func main() {
 			}
 
 			tempPassword := []rune(string(password) + length)
-			// fmt.Println("PASSWORD: 3", string(password))
 			newLength := len(tempPassword)
 
 			if highScore < 19 { // if rule 19 not apply, skip
@@ -1353,10 +1361,8 @@ func main() {
 				}
 
 				password = []rune(string(password) + appendStr)
-				// fmt.Println("PASSWORD: 4", string(password))
 			}
 
-			// fmt.Println("PASSWORD: 5", string(password))
 			return Cheat5(password)
 		}
 
@@ -1372,7 +1378,6 @@ func main() {
 			ctr := utility.GetNumberCount(password)
 
 			if ctr < n && highScore >= 17 {
-				// fmt.Println("Insufficient, ", ctr, n, string(password))
 				num := 0
 				if difficulty == "easy" {
 					num = len(password) * 3 / 7
@@ -1508,8 +1513,6 @@ func main() {
 					passRight := password[loc[1]:]
 					passMid := password[loc[0]:loc[1]]
 
-					// fmt.Println(passLeft, passMid, passRight)
-
 					// if contain other roman numerals (fail), clear it
 					clearLeft := regexp.MustCompile("[VXLCDM]|I{2,}|I$")
 					clearRight := regexp.MustCompile("[VXLCDM]|I{2,}|^I")
@@ -1521,23 +1524,18 @@ func main() {
 					passMid = temp.ReplaceAllString(passMid, "V${1}VII")
 					passMid = clearMid2.ReplaceAllString(clearMid.ReplaceAllString(passMid, "V"), "")
 
-					// fmt.Println(passLeft, passMid, passRight)
 					password = passLeft + passMid + passRight
-					// fmt.Println(password)
 
 					return []rune(password)
 				}
 
 				temp = regexp.MustCompile("VI*([^V]+)VI*") // else check for V(II) V(II) possibilities
 				loc = temp.FindStringIndex(password)
-				// fmt.Println(loc)
 
 				if loc != nil {
 					passLeft := password[:loc[0]]
 					passRight := password[loc[1]:]
 					passMid := password[loc[0]:loc[1]]
-
-					// fmt.Println(passLeft, passMid, passRight)
 
 					// if contain other roman numerals (fail), clear it
 					clearLeft := regexp.MustCompile("[VXLCDM]|I{2,}|I$")
@@ -1550,23 +1548,18 @@ func main() {
 					passMid = temp.ReplaceAllString(passMid, "VII${1}V")
 					passMid = clearMid2.ReplaceAllString(clearMid.ReplaceAllString(passMid, "V"), "")
 
-					// fmt.Println(passLeft, passMid, passRight)
 					password = passLeft + passMid + passRight
-					// fmt.Println(password)
 
 					return []rune(password)
 				}
 
 				temp = regexp.MustCompile("X+V*|X*V+") // else modify to XXXV
 				loc = temp.FindStringIndex(password)
-				// fmt.Println(loc)
 
 				if loc != nil {
 					passLeft := password[:loc[0]]
 					passRight := password[loc[1]:]
 					passMid := password[loc[0]:loc[1]]
-
-					// fmt.Println(passLeft, passMid, passRight)
 
 					// if contain other roman numerals (fail), clear it
 					clearLeft := regexp.MustCompile("[VXLCDM]|I{2,}|I$")
@@ -1576,9 +1569,7 @@ func main() {
 
 					passMid = temp.ReplaceAllString(passMid, "XXXV")
 
-					// fmt.Println(passLeft, passMid, passRight)
 					password = passLeft + passMid + passRight
-					// fmt.Println(password)
 
 					return []rune(password)
 				}
@@ -1766,7 +1757,6 @@ func main() {
 			// return password
 		}
 
-		// fmt.Println("Before cheat:", string(password))
 		password = Cheat1(password)
 		for retry {
 			fmt.Println("Retry")
@@ -1787,11 +1777,11 @@ func main() {
 	}
 
 	checkHelper := func(w http.ResponseWriter, r *http.Request) {
-		log.Print("Request received")
+		// log.Print("Request received")
 		passwordStr := r.PostFormValue("password")
-		// fmt.Println("PASSWORD: ", passwordStr)
 		password := []rune(passwordStr)
 
+		// if cheat in entered, call cheat
 		match, _ := regexp.MatchString("cheat", passwordStr)
 		if match {
 			fmt.Println("Cheating")
@@ -1800,8 +1790,9 @@ func main() {
 			return
 		}
 
-		log.Print(string(password))
+		// log.Print(string(password))
 
+		// else, check normally
 		checkAndApply(w, r, password)
 	}
 
@@ -1838,6 +1829,7 @@ func main() {
 
 		// fmt.Println("Timer activated")
 
+		// spread fire
 		m := regexp.MustCompile("[^🔥]🔥|🔥[^🔥]")
 		newPassword := m.ReplaceAllString(string(password), "${1}🔥🔥$2")
 		password = []rune(newPassword)
@@ -1875,8 +1867,8 @@ func main() {
 		if superPauled && !match {
 			fmt.Println("failure")
 
+			// display game-over screen
 			time := r.PostFormValue("time")
-
 			str := `<div id="game-over" class="flex-column" style="position: absolute; width: 100%; height: 100%; display: flex;">
 						<div class="row flex-grow-1 align-items-center justify-content-center" style="display: flex;font-size: 48;">
 							<div style="position: absolute; width: 100%; height: 100%; background-color: grey; opacity: 0.5;"></div>
@@ -1937,30 +1929,12 @@ func main() {
 		}
 
 		newExtra := r.PostFormValue("extra")
-		// fmt.Println("New Extra")
-		// fmt.Println(newExtra)
 		Rules[5].Emoji = "✅"
 		Rules[5].Extra = template.HTML(newExtra)
 
 		password := []rune(r.PostFormValue("password"))
 		checkAndApply(w, r, password)
 	}
-
-	// save := func(w http.ResponseWriter, r *http.Request) {
-
-	// }
-
-	// load := func(w http.ResponseWriter, r *http.Request) {
-	// 	// saveFiles, _ := db.Query(`
-	// 	// 	SELECT * FROM save
-	// 	// `)
-	// 	query, _ := db.Prepare(`INSERT INTO save (date, difficulty, time, entry, background, highscore, country1, country2, country3, captcha, sacrifice) VALUES
-	// 	(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	// 	`)
-	// 	//date, diff, time, entr, bg, hs, c1, c2, c3, capt, sac
-	// 	time := time.Now().Format("2006-01-02")
-	// 	query.Exec(time, difficulty, "", "", "", highScore, country1.name, country2.name, country3.name, captcha.answer, "")
-	// }
 
 	http.HandleFunc("/", selectHandler)
 	http.HandleFunc("/handle/", handler)
@@ -1969,7 +1943,5 @@ func main() {
 	http.HandleFunc("/reCaptcha/", reCaptcha)
 	http.HandleFunc("/timerPaul/", timerPaul)
 	http.HandleFunc("/sacrifice/", sacrifice)
-	// http.HandleFunc("/save/", save)
-	// http.HandleFunc("/load/", load)
 	http.ListenAndServe(":1334", nil)
 }
